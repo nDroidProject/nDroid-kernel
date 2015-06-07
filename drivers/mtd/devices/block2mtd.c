@@ -209,7 +209,7 @@ static void block2mtd_free_device(struct block2mtd_dev *dev)
 }
 
 
-static struct block2mtd_dev *add_device(char *devname, int erase_size)
+static struct block2mtd_dev *add_device(char *devname, char *id, int erase_size)
 {
 	const fmode_t mode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
 	struct block_device *bdev;
@@ -217,6 +217,9 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size)
 	char *name;
 
 	if (!devname)
+		return NULL;
+
+	if (!id)
 		return NULL;
 
 	dev = kzalloc(sizeof(struct block2mtd_dev), GFP_KERNEL);
@@ -257,7 +260,7 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size)
 
 	/* Setup the MTD structure */
 	/* make the name contain the block device in */
-	name = kasprintf(GFP_KERNEL, "block2mtd: %s", devname);
+	name = kasprintf(GFP_KERNEL, "%s: %s", id, devname);
 	if (!name)
 		goto err_destroy_mutex;
 
@@ -283,7 +286,7 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size)
 	list_add(&dev->list, &blkmtd_device_list);
 	pr_info("mtd%d: [%s] erase_size = %dKiB [%d]\n",
 		dev->mtd.index,
-		dev->mtd.name + strlen("block2mtd: "),
+		dev->mtd.name + (strlen(id) + 2),
 		dev->mtd.erasesize >> 10, dev->mtd.erasesize);
 	return dev;
 
@@ -333,7 +336,9 @@ static int parse_num(size_t *num, const char *token)
 	if (*endp)
 		return -EINVAL;
 
-	*num = n;
+	if (num != NULL)
+		*num = n;
+
 	return 0;
 }
 
@@ -348,15 +353,16 @@ static inline void kill_final_newline(char *str)
 
 #ifndef MODULE
 static int block2mtd_init_called = 0;
-static char block2mtd_paramline[80 + 12]; /* 80 for device, 12 for erase size */
+static char block2mtd_paramline[80 + 16 + 12]; /* 80 for device, 16 for id, and 12 for erase size */
 #endif
 
 static int block2mtd_setup2(const char *val)
 {
-	char buf[80 + 12]; /* 80 for device, 12 for erase size */
+	char buf[80 + 16 + 12]; /* 80 for device, 16 for id, and 12 for erase size */
 	char *str = buf;
-	char *token[2];
+	char *token[3];
 	char *name;
+	char *id;
 	size_t erase_size = PAGE_SIZE;
 	int i, ret;
 
@@ -368,7 +374,7 @@ static int block2mtd_setup2(const char *val)
 	strcpy(str, val);
 	kill_final_newline(str);
 
-	for (i = 0; i < 2; i++)
+	for (i = 0; i < 3; i++)
 		token[i] = strsep(&str, ",");
 
 	if (str) {
@@ -387,15 +393,24 @@ static int block2mtd_setup2(const char *val)
 		return 0;
 	}
 
-	if (token[1]) {
-		ret = parse_num(&erase_size, token[1]);
+	id = "block2mtd";
+	if (token[1] && (parse_num(NULL, token[1]) || token[2])) {
+		if (strlen(token[1]) + 1 > 16) {
+			pr_err("identifier too long");
+			return 0;
+		}
+		id = token[1];
+	}
+
+	if (token[2]) {
+		ret = parse_num(&erase_size, token[2]);
 		if (ret) {
 			pr_err("illegal erase size\n");
 			return 0;
 		}
 	}
 
-	add_device(name, erase_size);
+	add_device(name, id, erase_size);
 
 	return 0;
 }
