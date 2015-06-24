@@ -104,22 +104,9 @@
 			#size-cells = <1>;
 
 			i2c@90050000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
 				compatible = "snps,designware-i2c";
 				reg = <0x90050000 0x1000>;
 				interrupts = <20>;
-
-				clocks = <&apb_pclk>;
-
-				i2c-sda-falling-time-ns = <810>;
-				i2c-scl-falling-time-ns = <2410>;
-
-				touchpad@20 {
-					compatible = "synaptics_i2c";
-					reg = <0x20>;
-				};
 			};
 		};
 	};
