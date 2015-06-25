@@ -150,12 +150,12 @@ static enum power_supply_property test_power_battery_props[] = {
 };
 
 static char *test_power_ac_supplied_to[] = {
-	"test_battery",
+	"battery",
 };
 
 static struct power_supply test_power_supplies[] = {
 	[TEST_AC] = {
-		.name = "test_ac",
+		.name = "ac",
 		.type = POWER_SUPPLY_TYPE_MAINS,
 		.supplied_to = test_power_ac_supplied_to,
 		.num_supplicants = ARRAY_SIZE(test_power_ac_supplied_to),
@@ -164,14 +164,14 @@ static struct power_supply test_power_supplies[] = {
 		.get_property = test_power_get_ac_property,
 	},
 	[TEST_BATTERY] = {
-		.name = "test_battery",
+		.name = "battery",
 		.type = POWER_SUPPLY_TYPE_BATTERY,
 		.properties = test_power_battery_props,
 		.num_properties = ARRAY_SIZE(test_power_battery_props),
 		.get_property = test_power_get_battery_property,
 	},
 	[TEST_USB] = {
-		.name = "test_usb",
+		.name = "usb",
 		.type = POWER_SUPPLY_TYPE_USB,
 		.supplied_to = test_power_ac_supplied_to,
 		.num_supplicants = ARRAY_SIZE(test_power_ac_supplied_to),
